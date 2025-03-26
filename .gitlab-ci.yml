@@ -1,0 +1,13 @@
+variables:
+  CI_CD_PROJECT_REF: &ref "v3.5.2"
+  TF_VERSION: latest:^1.5
+  LEGACY_BRANCH_MODE: "true"
+  ENABLE_TERRAFORM_COMPLIANCE_TESTS: "false"
+  # TODO below variables shouldn't be overriden here but set
+  # inside deployment/datahub/ci-cd/shared-gitlab-ci.yml instead
+  _RELATED_LEGACY_BRANCH_INT: "release"
+
+include:
+  - project: "deployment/datahub/ci-cd"
+    ref: *ref
+    file: "shared.gitlab-ci.yml"

@@ -46,14 +46,3 @@ terraform destroy
 # NOTE: It may fail saying that you have object in access log and prometheus-reloader buckets
 # please delete objects manually (CLI or Console) and re-run terraform destroy until stack is fully destroyed
 ```
-
-## Configuration
-
-See [docs/README.md#configuration](docs/old/README.md#configuration)
-
-
-## Next Steps
-
-- Do not use config_reloader lambda to update blackbox configuration but instead integrate configuration into docker image like it is done is alertmanager (or harmonize alertmanager configuration with this repo)
-- write an ADR about why we now use lambda based config-reloader instead of docker sidecar config-reloader
-# monitoring-prometheus-pagerduty

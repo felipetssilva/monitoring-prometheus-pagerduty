@@ -1,0 +1,100 @@
+remote_write:
+  - url: ${amazon_managed_prometheus_write_endpoint}
+    sigv4:
+      region: ${aws_region}
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - ${ALERTMANAGER_URLS[0]}
+            - ${ALERTMANAGER_URLS[1]}
+            - ${ALERTMANAGER_URLS[2]}
+      scheme: https
+      api_version: v2
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - 'rules/*.yml'
+  - 'rules/*.yaml'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+
+  - job_name: prometheus
+    honor_timestamps: true
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+    - targets:
+      - localhost:9090
+
+  - job_name: blackbox
+    scrape_interval: 1m
+    scrape_timeout: 50s
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    scheme: http
+    static_configs:
+      - targets: []
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: ${BLACKBOX_URL}
+
+  - job_name: cloudwatch
+    scrape_interval: 4m
+    scrape_timeout: 4m
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - ${CLOUDWATCH_URL}
+
+%{ if scrape_snowflake_metrics }
+  - job_name: snowflake
+    scrape_interval: 30m
+    scrape_timeout: 5m
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - ${SNOWFLAKE_URL}
+%{ endif }
+
+  - job_name: alertmanager
+    scrape_interval: 1m
+    scrape_timeout: 50s
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+        - ${ALERTMANAGER_URLS[0]}
+        - ${ALERTMANAGER_URLS[1]}
+        - ${ALERTMANAGER_URLS[2]}
+
+  - job_name: pushgateway
+    honor_labels: true
+    scrape_interval: 10s
+    scrape_timeout: 8s
+    static_configs:
+      - targets: ['${PUSHGATEWAY_URL}']
+        labels:
+          group: 'lambdas'
+    metric_relabel_configs:
+      - action: labeldrop
+        regex: log_group
+      - action: labeldrop
+        regex: log_stream
+
+  - job_name: rds-exporter
+    honor_labels: true
+    scrape_interval: 10m
+    scrape_timeout: 60s
+    static_configs:
+      - targets: ['${RDS_EXPORTER_URL}']
